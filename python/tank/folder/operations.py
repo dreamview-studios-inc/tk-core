@@ -126,6 +126,11 @@ def process_filesystem_structure(tk, entity_type, entity_ids, preview, engine):
 
     """
 
+    # Dreamview. We avoid creating the root folder structure to work around
+    # a limitation where tk creates root Project folders for each mount.
+    if entity_type == "Project":
+        return []
+
     # check that engine is either a string or None
     if not (isinstance(engine, six.string_types) or engine is None):
         raise ValueError("engine parameter needs to be a string or None")

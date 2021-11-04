@@ -21,7 +21,7 @@ from tank_vendor import six
 
 
 def create_single_folder_item(
-    tk, config_obj, io_receiver, entity_type, entity_id, sg_task_data, engine
+    tk, config_obj, io_receiver, entity_type, entity_id, sg_task_data, engine, root_type=None,
 ):
     """
     Creates folders for an entity type and an entity id.
@@ -78,6 +78,9 @@ def create_single_folder_item(
         # get the parent path of the project folder
         storage_root_path = project_folder.get_storage_root()
 
+        if root_type and root_type not in storage_root_path:
+            return
+
         # now walk down, starting from the project level until we reach our entity
         # and create all the structure.
         #
@@ -126,10 +129,16 @@ def process_filesystem_structure(tk, entity_type, entity_ids, preview, engine):
 
     """
 
+    root_type = None
+
     # Dreamview. We avoid creating the root folder structure to work around
     # a limitation where tk creates root Project folders for each mount.
     if entity_type == "Project":
-        return []
+        root_type = tk.shotgun.find_one(
+            "Project",
+            [["id", "is", entity_ids]],
+            ["sg_root_type"]
+        )["sg_root_type"]
 
     # check that engine is either a string or None
     if not (isinstance(engine, six.string_types) or engine is None):
@@ -218,7 +227,7 @@ def process_filesystem_structure(tk, entity_type, entity_ids, preview, engine):
     # now loop over all individual objects and create folders
     for i in items:
         create_single_folder_item(
-            tk, config, io_receiver, i["type"], i["id"], i["sg_task_data"], engine
+            tk, config, io_receiver, i["type"], i["id"], i["sg_task_data"], engine, root_type
         )
 
     folders_created = io_receiver.execute_folder_creation()
